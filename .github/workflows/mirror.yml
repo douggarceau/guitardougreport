@@ -1,0 +1,38 @@
+name: Mirror the Seattle site
+# Copies the public douggarceau/seattlesinner site, swaps in the Seattle Edition masthead,
+# and publishes it here. Content stays identical to the main site.
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: pages
+  cancel-in-progress: false
+env:
+  MIRROR_DOMAIN: ""   # set to guitardougreport.com once the domain is bought and its DNS points here
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: douggarceau/seattlesinner
+          ref: main
+          path: site
+      - run: python3 tools/patch.py site overlay
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - id: deploy
+        uses: actions/deploy-pages@v4
